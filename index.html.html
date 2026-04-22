@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>მძივების მაღაზია — მართვის სისტემა</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 14px; }
+  .nav { display: flex; gap: 4px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e3de; flex-wrap: wrap; align-items: center; }
+  .nav h1 { font-size: 15px; font-weight: 600; margin-right: 10px; color: #3c3489; }
+  .nb { padding: 7px 14px; border: 1px solid #ddd; border-radius: 8px; background: transparent; cursor: pointer; font-size: 13px; color: #666; transition: all .15s; }
+  .nb.active, .nb:hover { background: #f1effe; color: #3c3489; border-color: #c5bef5; font-weight: 500; }
+  .pg { display: none; padding: 16px; }
+  .pg.active { display: block; }
+  .card { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .ct { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a; }
+  .row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 110px; }
+  label { font-size: 12px; color: #666; font-weight: 500; }
+  input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; font-size: 13px; width: 100%; font-family: inherit; }
+  input:focus, select:focus { outline: none; border-color: #9d8ef0; box-shadow: 0 0 0 3px rgba(157,142,240,.12); }
+  .btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; font-family: inherit; }
+  .btn:hover { background: #f5f4f0; }
+  .btn-p { background: #3c3489; color: #fff; border-color: #3c3489; }
+  .btn-p:hover { background: #2d2666; }
+  .btn-d { color: #c0392b; border-color: #f5b8b3; }
+  .btn-d:hover { background: #fdf0ef; }
+  .btn-sm { padding: 4px 9px; font-size: 12px; }
+  .btn-g { color: #0F6E56; border-color: #9FE1CB; }
+  .btn-g:hover { background: #E1F5EE; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-weight: 600; font-size: 12px; color: #888; padding: 8px 10px; text-align: left; border-bottom: 1px solid #f0eee8; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f5f4f0; color: #1a1a1a; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #faf9f6; }
+  .bk { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .ok { background: #E1F5EE; color: #0F6E56; }
+  .lw { background: #FAEEDA; color: #854F0B; }
+  .ot { background: #FCEBEB; color: #A32D2D; }
+  .mets { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .met { background: #fff; border: 1px solid #e8e6e0; border-radius: 10px; padding: 12px 14px; }
+  .ml { font-size: 11px; color: #888; margin-bottom: 3px; font-weight: 500; }
+  .mv { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+  .ms { font-size: 11px; color: #aaa; margin-top: 2px; }
+  .sb { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .sb input { flex: 1; min-width: 100px; }
+  .ci { display: flex; align-items: center; gap: 7px; padding: 8px; background: #faf9f6; border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+  .cn { flex: 1; font-weight: 600; font-size: 12px; }
+  .stot { font-size: 18px; font-weight: 700; text-align: right; padding: 10px 0; border-top: 1px solid #f0eee8; margin-top: 8px; color: #3c3489; }
+  .sg { display: grid; grid-template-columns: 1fr 275px; gap: 12px; }
+  .hi { padding: 10px 12px; border: 1px solid #e8e6e0; border-radius: 10px; margin-bottom: 8px; }
+  .hh { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .hd { color: #aaa; font-size: 12px; }
+  .ha { font-weight: 700; color: #3c3489; }
+  .em { text-align: center; padding: 30px; color: #bbb; font-size: 13px; }
+  .fl { position: fixed; top: 12px; right: 12px; padding: 10px 16px; border-radius: 8px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity .2s; pointer-events: none; font-weight: 500; }
+  .fl.show { opacity: 1; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width: 640px) { .sg { grid-template-columns: 1fr; } .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <h1>📿 მძივების მაღაზია</h1>
+  <button class="nb active" onclick="sp('dash',this)">🏠 მთავარი</button>
+  <button class="nb" onclick="sp('prod',this)">📦 საქონელი</button>
+  <button class="nb" onclick="sp('sale',this)">🛒 გაყიდვა</button>
+  <button class="nb" onclick="sp('hist',this)">📋 ისტორია</button>
+  <button class="nb" onclick="sp('rep',this)">📊 ანგარიში</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div id="p-dash" class="pg active">
+  <div class="mets" id="mets"></div>
+  <div class="grid2">
+    <div class="card"><div class="ct">⚠️ დაბალი მარაგი</div><div id="lowst"></div></div>
+    <div class="card"><div class="ct">🕐 ბოლო გაყიდვები</div><div id="recsale"></div></div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<div id="p-prod" class="pg">
+  <div class="card">
+    <div class="ct">➕ საქონლის დამატება</div>
+    <div class="row">
+      <div class="field"><label>სახელი *</label><input id="pn" placeholder="მაგ: ოქროსფ. მძივი 6მმ"></div>
+      <div class="field"><label>კატეგორია</label>
+        <select id="pc">
+          <option>მძივი</option><option>ძაფი</option><option>სამაჯური</option>
+          <option>ყელსაბამი</option><option>საყურე</option><option>კლამერი</option>
+          <option>პენდანტი</option><option>სხვა</option>
+        </select>
+      </div>
+      <div class="field"><label>ფერი / აღწ.</label><input id="pcl" placeholder="მაგ: ოქროსფ., მინა, 6მმ..."></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>გასაყ. ფასი (₾)</label><input id="pp" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>შესყ. ფასი (₾)</label><input id="pcs" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>რაოდენობა</label><input id="pq" type="number" min="0" placeholder="0"></div>
+      <div class="field"><label>ერთეული</label>
+        <select id="pu"><option>ც</option><option>გ</option><option>მ</option><option>კომ.</option><option>შეკვ.</option></select>
+      </div>
+      <div class="field"><label>მინ. მარაგი</label><input id="pm" type="number" min="0" placeholder="5"></div>
+    </div>
+    <button class="btn btn-p" onclick="addP()">+ დამატება</button>
+  </div>
+
+  <div class="card">
+    <div class="ct">📦 საქონლის სია</div>
+    <div class="sb">
+      <input id="spq" placeholder="ძებნა სახელით, ფერით..." oninput="rP()">
+      <select id="spc" onchange="rP()">
+        <option value="">ყველა კატეგ.</option>
+        <option>მძივი</option><option>ძაფი</option><option>სამაჯური</option>
+        <option>ყელსაბამი</option><option>საყურე</option><option>კლამერი</option>
+        <option>პენდანტი</option><option>სხვა</option>
+      </select>
+      <select id="sps" onchange="rP()">
+        <option value="">ყველა</option>
+        <option value="lw">დაბალი მარაგი</option>
+        <option value="ot">ამოწ.</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>სახელი</th><th>კატ.</th><th>ფერი</th><th>ფასი</th><th>მარაგი</th><th>სტ.</th><th></th></tr></thead>
+        <tbody id="ptb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SALE -->
+<div id="p-sale" class="pg">
+  <div class="sg">
+    <div class="card">
+      <div class="ct">🔍 საქონლის არჩევა</div>
+      <div class="sb">
+        <input id="ssq" placeholder="ძებნა..." oninput="rSP()">
+        <select id="ssc" onchange="rSP()">
+          <option value="">ყველა</option>
+          <option>მძივი</option><option>ძაფი</option><option>სამაჯური</option>
+          <option>ყელსაბამი</option><option>საყურე</option><option>კლამერი</option>
+          <option>პენდანტი</option><option>სხვა</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>სახელი</th><th>კატ.</th><th>ფასი</th><th>მარ.</th><th></th></tr></thead>
+          <tbody id="stb"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="ct">🛒 კალათა</div>
+        <div id="citems"></div>
+        <div class="stot" id="ctot">სულ: ₾0.00</div>
+        <div class="field" style="margin-top:10px"><label>მომხმარებელი (სურვ.)</label><input id="scust" placeholder="სახელი..."></div>
+        <button class="btn btn-p" style="width:100%;margin-top:9px" onclick="doSale()">✓ გაყიდვის დასრულება</button>
+        <button class="btn btn-d" style="width:100%;margin-top:6px" onclick="clCart()">✕ კალათის გასუფთ.</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="p-hist" class="pg">
+  <div class="sb"><input id="hq" placeholder="ძებნა მომხ. ან საქონლით..." oninput="rH()" style="max-width:300px"></div>
+  <div id="hlist"></div>
+</div>
+
+<!-- REPORTS -->
+<div id="p-rep" class="pg">
+  <div class="mets" id="rmets"></div>
+  <div class="grid2">
+    <div class="card"><div class="ct">📊 კატეგ. შემოსავალი</div><div id="catrep"></div></div>
+    <div class="card"><div class="ct">🏆 საუკ. პროდუქტი</div><div id="toprep"></div></div>
+  </div>
+  <div class="card"><div class="ct">💰 მოგება</div><div id="profrep"></div></div>
+</div>
+
+<div class="fl" id="fl"></div>
+
+<script>
+let P = [], S = [], C = [];
+try { P = JSON.parse(localStorage.getItem('bm_p') || '[]'); } catch(e) {}
+try { S = JSON.parse(localStorage.getItem('bm_s') || '[]'); } catch(e) {}
+
+const CC = {
+  'მძივი':    'background:#E1F5EE;color:#0F6E56',
+  'ძაფი':     'background:#FAEEDA;color:#854F0B',
+  'სამაჯური': 'background:#EEEDFE;color:#3C3489',
+  'ყელსაბამი':'background:#FAECE7;color:#993C1D',
+  'საყურე':   'background:#FBEAF0;color:#72243E',
+  'კლამერი':  'background:#E6F1FB;color:#0C447C',
+  'პენდანტი': 'background:#EAF3DE;color:#3B6D11',
+  'სხვა':     'background:#F1EFE8;color:#5F5E5A'
+};
+
+function sv() {
+  try { localStorage.setItem('bm_p', JSON.stringify(P)); localStorage.setItem('bm_s', JSON.stringify(S)); } catch(e) {}
+}
+
+function showFlash(m, ok=true) {
+  const f = document.getElementById('fl');
+  f.textContent = m;
+  f.style.background = ok ? '#E1F5EE' : '#FCEBEB';
+  f.style.color = ok ? '#0F6E56' : '#A32D2D';
+  f.style.border = '1px solid ' + (ok ? '#9FE1CB' : '#F7C1C1');
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 2200);
+}
+
+function sp(id, btn) {
+  document.querySelectorAll('.pg').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x => x.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'dash') rD();
+  if (id === 'prod') rP();
+  if (id === 'sale') { rSP(); rCart(); }
+  if (id === 'hist') rH();
+  if (id === 'rep')  rRep();
+}
+
+function cb(cat) {
+  const s = CC[cat] || CC['სხვა'];
+  return `<span class="bk" style="${s}">${cat}</span>`;
+}
+
+function sb2(q, mn) {
+  if (q <= 0) return '<span class="bk ot">ამოწ.</span>';
+  if (q <= mn) return '<span class="bk lw">დაბ.</span>';
+  return '<span class="bk ok">კარგი</span>';
+}
+
+// ---------- PRODUCTS ----------
+function addP() {
+  const n = document.getElementById('pn').value.trim();
+  if (!n) { showFlash('სახელი შეიყვანეთ!', false); return; }
+  P.push({
+    id: Date.now(),
+    name: n,
+    cat: document.getElementById('pc').value,
+    color: document.getElementById('pcl').value.trim(),
+    price: parseFloat(document.getElementById('pp').value) || 0,
+    cost: parseFloat(document.getElementById('pcs').value) || 0,
+    qty: parseInt(document.getElementById('pq').value) || 0,
+    unit: document.getElementById('pu').value,
+    min: parseInt(document.getElementById('pm').value) || 5
+  });
+  sv();
+  ['pn','pcl','pp','pcs','pq','pm'].forEach(i => document.getElementById(i).value = '');
+  rP();
+  showFlash('✓ ' + n + ' დამატებულია');
+}
+
+function dP(id) {
+  if (!confirm('წაიშალოს პროდუქტი?')) return;
+  P = P.filter(x => x.id !== id);
+  sv(); rP(); showFlash('წაშლილია');
+}
+
+function uQ(id, d) {
+  const p = P.find(x => x.id === id);
+  if (!p) return;
+  p.qty = Math.max(0, p.qty + d);
+  sv(); rP();
+}
+
+function rP() {
+  const q = (document.getElementById('spq').value || '').toLowerCase();
+  const cat = document.getElementById('spc').value;
+  const st = document.getElementById('sps').value;
+  let L = P.filter(p => {
+    const mq = !q || p.name.toLowerCase().includes(q) || (p.color || '').toLowerCase().includes(q);
+    const mc = !cat || p.cat === cat;
+    const ms = !st || (st==='lw' && p.qty>0 && p.qty<=p.min) || (st==='ot' && p.qty<=0);
+    return mq && mc && ms;
+  });
+  const tb = document.getElementById('ptb');
+  if (!L.length) { tb.innerHTML = '<tr><td colspan="7"><div class="em">საქონელი არ მოიძებნა</div></td></tr>'; return; }
+  tb.innerHTML = L.map(p => `<tr>
+    <td><strong>${p.name}</strong></td>
+    <td>${cb(p.cat)}</td>
+    <td style="font-size:12px;color:#888">${p.color || '—'}</td>
+    <td>₾${p.price.toFixed(2)}<br><span style="font-size:10px;color:#aaa">/ ${p.unit}</span></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:5px">
+        <button class="btn btn-sm" onclick="uQ(${p.id},-1)">−</button>
+        <span style="min-width:28px;text-align:center;font-weight:700">${p.qty}</span>
+        <button class="btn btn-sm btn-g" onclick="uQ(${p.id},1)">+</button>
+        <span style="font-size:11px;color:#aaa">${p.unit}</span>
+      </div>
+    </td>
+    <td>${sb2(p.qty, p.min)}</td>
+    <td><button class="btn btn-sm btn-d" onclick="dP(${p.id})">წაშლა</button></td>
+  </tr>`).join('');
+}
+
+// ---------- CART ----------
+function a2Cart(id) {
+  const p = P.find(x => x.id === id);
+  if (!p || p.qty <= 0) { showFlash('მარაგი ამოწ.!', false); return; }
+  const it = C.find(c => c.id === id);
+  if (it) {
+    if (it.qty >= p.qty) { showFlash('მეტი მარაგი არ არის!', false); return; }
+    it.qty++;
+  } else {
+    C.push({ id: p.id, name: p.name, price: p.price, unit: p.unit, qty: 1, cat: p.cat });
+  }
+  rCart();
+  showFlash('+ კალათაში დაემატა');
+}
+
+function rmCart(id) { C = C.filter(c => c.id !== id); rCart(); }
+
+function cqCart(id, d) {
+  const it = C.find(c => c.id === id);
+  if (!it) return;
+  const p = P.find(x => x.id === id);
+  const nq = it.qty + d;
+  if (nq <= 0) { rmCart(id); return; }
+  if (p && nq > p.qty) { showFlash('მარაგი არ არის!', false); return; }
+  it.qty = nq;
+  rCart();
+}
+
+function clCart() { C = []; rCart(); }
+
+function rCart() {
+  const el = document.getElementById('citems');
+  if (!C.length) {
+    el.innerHTML = '<div class="em" style="padding:14px">კალათა ცარიელია</div>';
+    document.getElementById('ctot').textContent = 'სულ: ₾0.00';
+    return;
+  }
+  el.innerHTML = C.map(c => `<div class="ci">
+    <div class="cn">${c.name}<br><span style="font-weight:400;font-size:11px;color:#aaa">${c.cat}</span></div>
+    <button class="btn btn-sm" onclick="cqCart(${c.id},-1)">−</button>
+    <span style="min-width:20px;text-align:center;font-weight:700">${c.qty}</span>
+    <button class="btn btn-sm btn-g" onclick="cqCart(${c.id},1)">+</button>
+    <span style="font-size:12px;min-width:50px;text-align:right;font-weight:600">₾${(c.price*c.qty).toFixed(2)}</span>
+    <button class="btn btn-sm btn-d" onclick="rmCart(${c.id})">✕</button>
+  </div>`).join('');
+  const total = C.reduce((s, c) => s + c.price * c.qty, 0);
+  document.getElementById('ctot').textContent = 'სულ: ₾' + total.toFixed(2);
+}
+
+function doSale() {
+  if (!C.length) { showFlash('კალათა ცარიელია!', false); return; }
+  const total = C.reduce((s, c) => s + c.price * c.qty, 0);
+  const cust = document.getElementById('scust').value.trim();
+  C.forEach(c => { const p = P.find(x => x.id === c.id); if (p) p.qty = Math.max(0, p.qty - c.qty); });
+  S.unshift({ id: Date.now(), date: new Date().toLocaleString('ka-GE'), items: [...C], total, customer: cust });
+  C = [];
+  document.getElementById('scust').value = '';
+  sv(); rCart(); rSP();
+  showFlash('✓ გაყიდვა: ₾' + total.toFixed(2) + (cust ? ' — ' + cust : ''));
+}
+
+function rSP() {
+  const q = (document.getElementById('ssq').value || '').toLowerCase();
+  const cat = document.getElementById('ssc').value;
+  let L = P.filter(p =>
+    (!q || p.name.toLowerCase().includes(q) || (p.color||'').toLowerCase().includes(q)) &&
+    (!cat || p.cat === cat)
+  );
+  const tb = document.getElementById('stb');
+  if (!L.length) { tb.innerHTML = '<tr><td colspan="5"><div class="em">საქონელი არ მოიძებნა</div></td></tr>'; return; }
+  tb.innerHTML = L.map(p => `<tr style="${p.qty<=0?'opacity:.4':''}">
+    <td><strong>${p.name}</strong>${p.color ? `<br><span style="font-size:11px;color:#aaa">${p.color}</span>` : ''}</td>
+    <td>${cb(p.cat)}</td>
+    <td>₾${p.price.toFixed(2)}<br><span style="font-size:10px;color:#aaa">/${p.unit}</span></td>
+    <td>${p.qty} ${p.unit}</td>
+    <td><button class="btn btn-sm btn-p" onclick="a2Cart(${p.id})" ${p.qty<=0?'disabled':''}>+</button></td>
+  </tr>`).join('');
+}
+
+// ---------- DASHBOARD ----------
+function rD() {
+  const tv = P.reduce((s, p) => s + p.price * p.qty, 0);
+  const td = S.filter(s => new Date(s.id).toDateString() === new Date().toDateString());
+  const tr2 = td.reduce((s, x) => s + x.total, 0);
+  const tall = S.reduce((s, x) => s + x.total, 0);
+  document.getElementById('mets').innerHTML = `
+    <div class="met"><div class="ml">სახეობები</div><div class="mv">${P.length}</div><div class="ms">პროდუქტი</div></div>
+    <div class="met"><div class="ml">მარაგის ღირ.</div><div class="mv">₾${tv.toFixed(0)}</div></div>
+    <div class="met"><div class="ml">დღეს</div><div class="mv">₾${tr2.toFixed(2)}</div><div class="ms">${td.length} ოპ.</div></div>
+    <div class="met"><div class="ml">სულ შემოსავ.</div><div class="mv">₾${tall.toFixed(0)}</div></div>
+  `;
+  const low = P.filter(p => p.qty <= p.min);
+  document.getElementById('lowst').innerHTML = low.length
+    ? low.slice(0,6).map(p => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f5f4f0;font-size:13px">
+        <span>${cb(p.cat)} ${p.name}</span>
+        <span>${sb2(p.qty,p.min)} <b>${p.qty}</b>${p.unit}</span>
+      </div>`).join('')
+    : '<div class="em">ყველა კარგადაა ✓</div>';
+  document.getElementById('recsale').innerHTML = S.length
+    ? S.slice(0,5).map(s => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f5f4f0;font-size:13px">
+        <div><div style="font-weight:600">${s.customer||'მომხ.'}</div><div style="font-size:11px;color:#aaa">${s.date}</div></div>
+        <div style="font-weight:700;color:#3c3489">₾${s.total.toFixed(2)}</div>
+      </div>`).join('')
+    : '<div class="em">გაყიდვები ჯერ არ არის</div>';
+}
+
+// ---------- HISTORY ----------
+function rH() {
+  const q = (document.getElementById('hq').value || '').toLowerCase();
+  let L = S.filter(s => !q || (s.customer||'').toLowerCase().includes(q) || s.items.some(i => i.name.toLowerCase().includes(q)));
+  const tot = S.reduce((s, x) => s + x.total, 0);
+  const hl = document.getElementById('hlist');
+  hl.innerHTML = `<div class="mets">
+    <div class="met"><div class="ml">სულ გაყიდ.</div><div class="mv">${S.length}</div></div>
+    <div class="met"><div class="ml">სულ შემოსავ.</div><div class="mv">₾${tot.toFixed(2)}</div></div>
+  </div>` + (L.length
+    ? L.map(s => `<div class="hi">
+        <div class="hh">
+          <div><strong>${s.customer||'ანონიმი'}</strong> <span class="hd">${s.date}</span></div>
+          <span class="ha">₾${s.total.toFixed(2)}</span>
+        </div>
+        <div style="color:#888;font-size:12px;margin-top:3px">${s.items.map(i=>`${i.name} ×${i.qty} (₾${(i.price*i.qty).toFixed(2)})`).join(' · ')}</div>
+      </div>`).join('')
+    : '<div class="em">ჩანაწერები არ მოიძებნა</div>');
+}
+
+// ---------- REPORTS ----------
+function rRep() {
+  const trev = S.reduce((s, x) => s + x.total, 0);
+  const tcost = S.reduce((s, sl) => s + sl.items.reduce((a, i) => {
+    const p = P.find(x => x.id === i.id); return a + (p ? p.cost * i.qty : 0);
+  }, 0), 0);
+  const profit = trev - tcost;
+  const pct = trev > 0 ? (profit / trev * 100) : 0;
+  document.getElementById('rmets').innerHTML = `
+    <div class="met"><div class="ml">სულ შემოსავ.</div><div class="mv">₾${trev.toFixed(2)}</div></div>
+    <div class="met"><div class="ml">სავარ. ხარჯი</div><div class="mv">₾${tcost.toFixed(2)}</div></div>
+    <div class="met"><div class="ml">სავარ. მოგება</div><div class="mv" style="color:#0F6E56">₾${profit.toFixed(2)}</div></div>
+    <div class="met"><div class="ml">საშ. გაყიდ.</div><div class="mv">₾${S.length ? (trev/S.length).toFixed(2) : '0.00'}</div></div>
+  `;
+  const cr = {};
+  S.forEach(s => s.items.forEach(i => { cr[i.cat] = (cr[i.cat]||0) + i.price*i.qty; }));
+  const crs = Object.entries(cr).sort((a,b) => b[1]-a[1]);
+  document.getElementById('catrep').innerHTML = crs.length
+    ? crs.map(([c,r]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f4f0;font-size:13px"><span>${cb(c)}</span><span style="font-weight:700">₾${r.toFixed(2)}</span></div>`).join('')
+    : '<div class="em">მონაც. არ არის</div>';
+  const pr2 = {};
+  S.forEach(s => s.items.forEach(i => {
+    if (!pr2[i.id]) pr2[i.id] = {name:i.name, rev:0, qty:0};
+    pr2[i.id].rev += i.price*i.qty; pr2[i.id].qty += i.qty;
+  }));
+  const tops = Object.values(pr2).sort((a,b) => b.rev-a.rev).slice(0,8);
+  document.getElementById('toprep').innerHTML = tops.length
+    ? tops.map((p,i) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f4f0;font-size:13px"><span><b style="color:#aaa">#${i+1}</b> ${p.name}</span><span style="font-weight:700">₾${p.rev.toFixed(2)}</span></div>`).join('')
+    : '<div class="em">მონაც. არ არის</div>';
+  document.getElementById('profrep').innerHTML = tcost
+    ? `<p style="font-size:13px;padding:8px 0;color:#555">გაყიდ. ₾${trev.toFixed(2)} − ხარჯი ₾${tcost.toFixed(2)} = <strong style="color:#0F6E56">₾${profit.toFixed(2)} (${pct.toFixed(1)}% მოგება)</strong></p>`
+    : '<p style="font-size:13px;color:#aaa;padding:8px 0">მოგებისთვის საქონელს <b>შესყიდვის ფასი</b> დაუმატეთ.</p>';
+}
+
+// Init
+rD();
+</script>
+</body>
+</html>
